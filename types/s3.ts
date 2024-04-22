@@ -58,3 +58,5 @@ export type {
     s3ResponseFn,
     contentTypeFn
 }
+
+export { S3Client }

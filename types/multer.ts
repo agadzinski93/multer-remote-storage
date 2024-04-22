@@ -1,5 +1,6 @@
 import { Request } from 'express';
 import { Readable } from 'stream';
+import { ResponseCallback as CloudinaryResponseCallback } from 'cloudinary';
 interface multerFunctionParams {
     req: Request,
     file: ProcessedMulterFile,
@@ -10,6 +11,7 @@ interface File {
     fieldname: string;
     originalname: string;
     encoding: string;
+    encryptionKey?: string,
     mimetype: string;
     size: number;
     destination: string;
@@ -27,7 +29,7 @@ interface ProcessedMulterFile extends File {
 type handleFileFn = (
     req: Request,
     file: ProcessedMulterFile,
-    cb: Function
+    cb: CloudinaryResponseCallback
 ) => void;
 
 type uploadFn = (

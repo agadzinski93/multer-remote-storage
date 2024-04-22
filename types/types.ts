@@ -1,6 +1,14 @@
 import { Request } from "express"
 import { File } from "./multer.ts"
-import { Tag } from "@aws-sdk/client-s3"
+import { Tag, S3Client } from "@aws-sdk/client-s3"
+import type { Storage } from "@google-cloud/storage"
+import { v2 } from './cloudinary.ts'
+
+interface uploadObject {
+    client: S3Client | Storage | typeof v2,
+    params?: any,
+    options?: uploadOptions
+}
 
 interface uploadOptions {
     chunk_size?: number,
@@ -8,31 +16,11 @@ interface uploadOptions {
     public_id?: string | ((req: Request, file: File, cb: Function) => string),
     queueSize?: number,
     tags?: Tag[] | undefined,
-    validator?: (req: Request, file: File, cb: Function) => string
+    trash?: string,
+    validator?: (req: Request, file: File, cb: Function) => boolean
 }
 
-/* 
-interface ProcessedFile {
-    filedname: string,
-    originalname: string,
-    encoding: string,
-    mimetype: string,
-    bucket?: string,
-    contentType?: string,
-    encryption?: string,
-    etag: string,
-    filename: string,
-    height?: number,
-    width?: number,
-    metadata: object | undefined,
-    path: string,
-    signature?: string,
-    size?: number,
-    storageClass: string,
-    timeCreated?: string,
-    versionId?: string | undefined
-} */
-
 export type {
+    uploadObject,
     uploadOptions
 }
