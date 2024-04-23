@@ -1,5 +1,6 @@
 import { createWriteStream, rm } from 'fs';
 import { Upload } from '@aws-sdk/lib-storage';
+import { DeleteObjectCommand, S3Client } from '@aws-sdk/client-s3';
 
 import { handleFileFn, uploadFn } from '../types/multer.ts';
 
@@ -19,7 +20,6 @@ import {
 } from '../types/gcs.ts';
 
 import {
-    S3Client,
     s3UploadOptionsFn,
     s3ResponseFn,
     Options,
@@ -220,8 +220,6 @@ export class RemoteStorage {
                 });
             }
         } catch (err: any) {
-            console.log('ERROR');
-            console.log(err);
             cb(err);
         }
     };
@@ -234,6 +232,17 @@ export class RemoteStorage {
                     { invalidate: true },
                     cb
                 );
+                break;
+            case GOOGLE_CLOUD_SERVICES:
+                (this.#client as Storage).bucket(this.#params.bucket).file(file.filename).delete({ ignoreNotFound: true }, cb);
+                break;
+            case AWS_S3:
+                (this.#client as S3Client).send(new DeleteObjectCommand({
+                    Bucket: this.#params.bucket,
+                    Key: file.filename
+                }), cb);
+                break;
+            default:
         }
     };
 
@@ -264,51 +273,45 @@ export class RemoteStorage {
                 });
             case GOOGLE_CLOUD_SERVICES:
                 return new Promise((resolve, reject) => {
-                    if (this.#client instanceof Storage) {
-                        const output: [object, string] = generateGcsUploadOptions({ req, file, cb }, this.#params, this.#options)
-                        const [gcsUploadOptions, destFileName] = output;
+                    const output: [object, string] = generateGcsUploadOptions({ req, file, cb }, this.#params, this.#options)
+                    const [gcsUploadOptions, destFileName] = output;
 
-                        const bucket = this.#client.bucket(this.#params.bucket);
-                        const destFile = bucket.file(destFileName);
-                        if (this.#options.chunk_size) {
-                            file.stream.pipe(destFile.createWriteStream(gcsUploadOptions)
-                            ).on("error", (err: Error) => {
-                                destFile.delete({ ignoreNotFound: true });
-                                reject(err.message);
-                            }).on("finish", () => {
-                                resolve(generateGcsResponse(destFile, this.#params.bucket, destFileName))
-                            });
-                        }
-                        else {
-                            file.stream.pipe(destFile.createWriteStream(gcsUploadOptions)
-                            ).on("error", (err: Error) => {
-                                destFile.delete({ ignoreNotFound: true });
-                                reject(err.message);
-                            }).on("finish", () => {
-                                resolve(generateGcsResponse(destFile, this.#params.bucket, destFileName))
-                            });
-                        }
+                    const bucket = (this.#client as Storage).bucket(this.#params.bucket);
+                    const destFile = bucket.file(destFileName);
+                    if (this.#options.chunk_size) {
+                        file.stream.pipe(destFile.createWriteStream(gcsUploadOptions)
+                        ).on("error", (err: Error) => {
+                            destFile.delete({ ignoreNotFound: true });
+                            reject(err.message);
+                        }).on("finish", () => {
+                            resolve(generateGcsResponse(destFile, this.#params.bucket, destFileName))
+                        });
                     }
-                    reject(new Error('Wrong type'));
+                    else {
+                        file.stream.pipe(destFile.createWriteStream(gcsUploadOptions)
+                        ).on("error", (err: Error) => {
+                            destFile.delete({ ignoreNotFound: true });
+                            reject(err.message);
+                        }).on("finish", () => {
+                            resolve(generateGcsResponse(destFile, this.#params.bucket, destFileName))
+                        });
+                    }
+
                 });
             case AWS_S3:
                 return new Promise((resolve, reject) => {
-                    if (this.#client instanceof S3Client) {
-                        const s3Options = generateS3UploadOptions({ req, file, cb }, this.#client, this.#params, this.#options);
-                        const upload = new Upload(s3Options);
-                        try {
-                            upload.done()
-                                .then((response) => {
-                                    resolve(generateS3Response(response, s3Options));
-                                })
-                                .catch((err) => {
-                                    reject(err)
-                                });
-                        } catch (err) {
-                            console.log('REJECTED');
-                            console.log(err);
-                            reject(err);
-                        }
+                    const s3Options = generateS3UploadOptions({ req, file, cb }, (this.#client as S3Client), this.#params, this.#options);
+                    const upload = new Upload(s3Options);
+                    try {
+                        upload.done()
+                            .then((response) => {
+                                resolve(generateS3Response(response, s3Options));
+                            })
+                            .catch((err) => {
+                                reject(err)
+                            });
+                    } catch (err) {
+                        reject(err);
                     }
                 });
             case MICROSOFT_AZURE_BLOBS:

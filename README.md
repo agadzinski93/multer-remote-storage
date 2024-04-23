@@ -24,6 +24,8 @@ npm install multer-remote-storage
 ## Examples
 
 ### Cloudinary Example
+
+storage.js
 ```javascript
 import {v2 as Cloudinary} from 'cloudinary';
 import { RemoteStorage } from 'multer-remote-storage';
@@ -42,7 +44,22 @@ const storage = new RemoteStorage({
     }
 });
 
-export {storage}
+export { storage }
+```
+
+route.js
+```javascript
+import multer from 'multer';
+import { storage } from '../utilities/storage.js';
+import {filter} from '../utilities/validators/fileValidator.js'; //Multer-related
+import { topicValidation } from '../utilities/validators/middleware/validators.js'; //JOI
+
+const router = express.Router({ caseSensitive: false, strict: false });
+
+const parser = multer({storage, fileFilter:filter, limits:{fileSize:1024000}});
+
+router.route('/:username/create')
+  .post(isLoggedIn,isAuthor,parser.single('topic[file]'),topicValidation,createTopic)
 ```
 | Property | Value |
 |-------------|--------------|
@@ -66,6 +83,7 @@ The following data will be appended to req.file
 |versionId|string|
 
 ### Google Cloud Storage Example
+storage.js
 ```javascript
 import {join,dirname} from 'path';
 import { Storage as Gcs } from '@google-cloud/storage';
@@ -82,11 +100,29 @@ const gcsStorage = new RemoteStorage({
         bucket:'mybucket'
     }
 });
+
+export { gcsStorage }
 ```
+
+router.js
+```javascript
+import multer from 'multer';
+import { gcsStorage } from '../utilities/storage.js';
+import {filter} from '../utilities/validators/fileValidator.js'; //Multer-related
+import { topicValidation } from '../utilities/validators/middleware/validators.js'; //JOI
+
+const router = express.Router({ caseSensitive: false, strict: false });
+
+const gcsParser = multer({storage:gcsStorage, fileFilter:filter, limits:{fileSize:1024000}});
+
+router.route('/:username/create')
+  .post(isLoggedIn,isAuthor,gcsParser.single('topic[file]'),topicValidation,createTopic)
+```
+
 | Property | Value |
 |-------------|--------------|
 | client       | [Google Cloud's Storage Class](https://www.npmjs.com/package/@google-cloud/storage)  |
-| params?       | Name of bucket PLUS [options](https://cloud.google.com/storage/docs/uploading-objects#storage-upload-object-client-libraries) for uploading object to bucket  |
+| params       | bucket (required) PLUS [options](https://cloud.google.com/storage/docs/uploading-objects#storage-upload-object-client-libraries) for uploading object to bucket  |
 |options?      |[See Below](#Options)|
 
 The following data will be appended to req.file
@@ -103,6 +139,8 @@ The following data will be appended to req.file
 |timeCreated|string|
 
 ### AWS S3 Example
+
+storage.js
 ```javascript
 import { S3Client } from '@aws-sdk/client-s3';
 import { RemoteStorage } from 'multer-remote-storage';
@@ -119,11 +157,28 @@ const s3Storage = new RemoteStorage({
         bucket:'mybucket'
     }
 });
+
+export { s3Storage }
 ```
+router.js
+```javascript
+import multer from 'multer';
+import { s3Storage } from '../utilities/storage.js';
+import {filter} from '../utilities/validators/fileValidator.js'; //Multer-related
+import { topicValidation } from '../utilities/validators/middleware/validators.js'; //JOI
+
+const router = express.Router({ caseSensitive: false, strict: false });
+
+const s3Parser = multer({storage:s3Storage, fileFilter:filter, limits:{fileSize:1024000}});
+
+router.route('/:username/create')
+  .post(isLoggedIn,isAuthor,s3Parser.single('topic[file]'),topicValidation,createTopic)
+```
+
 | Property | Value |
 |-------------|--------------|
 | client       | [S3Client Class](https://www.npmjs.com/package/@aws-sdk/client-s3)  |
-| params?       | Options for [Upload](https://docs.aws.amazon.com/AWSJavaScriptSDK/v3/latest/Package/-aws-sdk-lib-storage/) class  |
+| params       | bucket (required) and options for [Upload](https://docs.aws.amazon.com/AWSJavaScriptSDK/v3/latest/Package/-aws-sdk-lib-storage/) class  |
 |options?      |[See Below](#Options) |
 
 The following data will be appended to req.file
@@ -216,6 +271,10 @@ NOTE: Cloudinary does NOT want the file extension in the filename whereas Google
 
 ```javascript
 const handlePublicId = (req,file,cb) => {
+    /*
+        This example uses the date object to ensure a unique filename and assumes only
+        one dot (prior to extension) exists
+    */
     return `${file.originalname.split('.')[0]}-${Date.now()}.${file.originalname.split('.')[1]}`
 }
 

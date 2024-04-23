@@ -1,6 +1,7 @@
 import { Request } from "express"
 import { File } from "./multer.ts"
-import { Tag, S3Client } from "@aws-sdk/client-s3"
+import { Tag } from "@aws-sdk/client-s3"
+import { S3Client } from './s3.ts'
 import type { Storage } from "@google-cloud/storage"
 import { v2 } from './cloudinary.ts'
 
