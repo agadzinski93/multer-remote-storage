@@ -202,7 +202,7 @@ All options are optional. Some may only apply to certain clients. See below.
 |--------|--------|-----|
 chunk_size| number | This will trigger a chunked upload for any client
 public_id | string or (req,file,cb) => string | String or function that returns a string that will be used as the filename
-trash|string|Alternative text for trash text. [See Validation](#Validation)
+trash|string|Alternative text for trash text. [See Validation Note](#Big-Note-on-Validator)
 validator|(req,file,cb) => boolean| [See Validation](#Validation)
 leavePartsOnError| boolean| S3 Only
 queueSize| number | S3 Only
