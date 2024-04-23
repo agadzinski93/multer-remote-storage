@@ -50,6 +50,21 @@ export {storage}
 | params?       | Same as Cloudinary's [upload_stream](https://cloudinary.com/documentation/image_upload_api_reference#upload) and [upload_chunked_stream](https://cloudinary.com/documentation/upload_images#chunked_asset_upload) |
 |options?      |[See Below](#Options)  |
 
+The following data will be appended to req.file
+
+|variable|data type|info|
+|---|---|---|
+|etag|string|
+|filename|string|includes folder, excludes extension
+|folder|string|
+|height|number|if applicable
+|width|number|if applicable
+|path|string|public URL
+|signature|string|
+|size|number|
+|timeCreated|string|
+|versionId|string|
+
 ### Google Cloud Storage Example
 ```javascript
 import {join,dirname} from 'path';
@@ -74,6 +89,19 @@ const gcsStorage = new RemoteStorage({
 | params?       | Name of bucket PLUS [options](https://cloud.google.com/storage/docs/uploading-objects#storage-upload-object-client-libraries) for uploading object to bucket  |
 |options?      |[See Below](#Options)|
 
+The following data will be appended to req.file
+
+|variable|data type|info|
+|---|---|---|
+|bucket|string|
+|contentType|string|
+|etag|string|
+|filename|string|
+|path|string|public URL
+|size|number|
+|storageClass|string|
+|timeCreated|string|
+
 ### AWS S3 Example
 ```javascript
 import { S3Client } from '@aws-sdk/client-s3';
@@ -97,6 +125,19 @@ const s3Storage = new RemoteStorage({
 | client       | [S3Client Class](https://www.npmjs.com/package/@aws-sdk/client-s3)  |
 | params?       | Options for [Upload](https://docs.aws.amazon.com/AWSJavaScriptSDK/v3/latest/Package/-aws-sdk-lib-storage/) class  |
 |options?      |[See Below](#Options) |
+
+The following data will be appended to req.file
+
+|variable|data type|info|
+|---|---|---|
+|bucket|string|
+|contentType|string|
+|etag|string|
+|filename|string|
+|metadata|object|metadata passed in Upload options
+|path|string|public URL
+|encryption|string|
+|versionId|string|undefined if versioning disabled
 
 ### Options
 
