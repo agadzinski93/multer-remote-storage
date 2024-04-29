@@ -15,6 +15,7 @@ Use Multer to easily upload files to Cloudinary, AWS S3, or Google Cloud Storage
 4. [Validation](#Validation)
     * [Big Note on Validator](#Big-Note-on-Validator)
 5. [Public Id](#Public-Id)
+6. [TypeScript Example](#TypeScript-Example)
 
 ## Setup
 Run this command to install:
