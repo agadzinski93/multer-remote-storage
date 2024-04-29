@@ -2,7 +2,7 @@ import { createWriteStream, rm } from 'fs';
 import { Upload } from '@aws-sdk/lib-storage';
 import { DeleteObjectCommand, S3Client } from '@aws-sdk/client-s3';
 
-import { handleFileFn, uploadFn } from '../types/multer.ts';
+import { handleFileFn, removeFileFn, uploadFn } from '../types/multer.ts';
 
 import { uploadObject } from '../types/types.ts';
 
@@ -214,7 +214,7 @@ export class RemoteStorage {
                 await file.stream.pipe(writeStream)
                 rm(this.#trash, (err) => { });
                 cb(null, {
-                    path: null,
+                    path: undefined,
                     size: 0,
                     filename: '/'
                 });
@@ -224,7 +224,7 @@ export class RemoteStorage {
         }
     };
 
-    _removeFile: handleFileFn = (req, file, cb) => {
+    _removeFile: removeFileFn = (req, file, cb) => {
         switch (this.#host) {
             case CLOUDINARY:
                 (this.#client as typeof v2).uploader.destroy(

@@ -1,10 +1,13 @@
 import { Request } from 'express';
 import { Readable } from 'stream';
-import { ResponseCallback as CloudinaryResponseCallback } from 'cloudinary';
+
+type MulterCallback = (error?: any, info?: Partial<Express.Multer.File>) => void;
+type ErrorCallback = (error: Error | null) => void;
+
 interface multerFunctionParams {
     req: Request,
-    file: ProcessedMulterFile,
-    cb: Function
+    file: Express.Multer.File,
+    cb: MulterCallback
 }
 
 interface File {
@@ -28,21 +31,26 @@ interface ProcessedMulterFile extends File {
 
 type handleFileFn = (
     req: Request,
-    file: ProcessedMulterFile,
-    cb: CloudinaryResponseCallback
+    file: Express.Multer.File,
+    cb: MulterCallback
 ) => void;
+
+type removeFileFn = (re: Request, file: Express.Multer.File, cb: ErrorCallback) => void;
 
 type uploadFn = (
     req: Request,
-    file: ProcessedMulterFile,
-    cb: Function
+    file: Express.Multer.File,
+    cb: MulterCallback
 ) => Promise<object> | undefined;
 
 export type {
+    MulterCallback,
+    ErrorCallback,
     multerFunctionParams,
     File,
     ProcessedFile,
     ProcessedMulterFile,
     handleFileFn,
+    removeFileFn,
     uploadFn
 }

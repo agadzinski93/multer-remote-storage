@@ -1,5 +1,5 @@
 import { Request } from "express"
-import { File } from "./multer.ts"
+import { File, MulterCallback } from "./multer.ts"
 import { Tag } from "@aws-sdk/client-s3"
 import { S3Client } from './s3.ts'
 import type { Storage } from "@google-cloud/storage"
@@ -14,11 +14,11 @@ interface uploadObject {
 interface uploadOptions {
     chunk_size?: number,
     leavePartsOnError?: boolean,
-    public_id?: string | ((req: Request, file: File, cb: Function) => string),
+    public_id?: string | ((req: Request, file: File, cb: MulterCallback) => string),
     queueSize?: number,
     tags?: Tag[] | undefined,
     trash?: string,
-    validator?: (req: Request, file: File, cb: Function) => boolean
+    validator?: (req: Request, file: File, cb: MulterCallback) => boolean
 }
 
 export type {
