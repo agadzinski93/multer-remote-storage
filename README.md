@@ -227,10 +227,6 @@ Here is an example:
  * This example manually calls JOI's (a validation library for NodeJS)
  * validation function to validate the fields on req.body
  * 
- * In this example, you'll still need to call JOI's validator as a
- * middleware in your route AFTER multer to actually give the client
- * a response with error details
- * 
  * You can create a more complex function that checks on which
  * URL the client is visiting to decide which validator to use.
  * This prevents you from having to create another RemoteStorage
@@ -242,7 +238,9 @@ const handleTopicValidation = (req, file, cb) => {
             const {error, value} = topicValidator.validate(req.body);
             if (error) output = false;
         } catch(err) {
-            output = false;
+            output = false; //Will still allow your app to continue to next middleware
+            //Alternatively, calling cb(err) will result in Multer calling next(err)
+            //cb(err)
         }
         return output;
 }
@@ -327,7 +325,7 @@ const handlePublicId = (req: Request, file: File, cb: MulterCallback) => {
 const storage = new RemoteStorage({
     client: Cloudinary,
     params: {
-        folder: 'Programminghelp'
+        folder: 'Myfolder'
     },
     options: {
         public_id: handlePublicId,

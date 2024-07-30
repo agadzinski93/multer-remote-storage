@@ -1,6 +1,6 @@
 {
   "name": "multer-remote-storage",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "description": "Use Multer to easily upload files to Coudinary, AWS S3, or Google Cloud Storage",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
@@ -30,17 +30,17 @@
   },
   "homepage": "https://github.com/agadzinski93/multer-remote-storage#readme",
   "dependencies": {
-    "@aws-sdk/client-s3": "^3.556.0",
-    "@aws-sdk/lib-storage": "^3.556.0",
-    "@google-cloud/storage": "^7.10.2",
-    "cloudinary": "^2.2.0"
+    "@aws-sdk/client-s3": "^3.621.0",
+    "@aws-sdk/lib-storage": "^3.621.0",
+    "@google-cloud/storage": "^7.12.0",
+    "cloudinary": "^2.4.0"
   },
   "devDependencies": {
-    "@smithy/types": "^2.12.0",
+    "@smithy/types": "^3.3.0",
     "@types/express": "^4.17.21",
     "@types/multer": "^1.4.11",
     "ts-node": "^10.9.2",
-    "tsup": "^8.0.2",
-    "typescript": "^5.4.5"
+    "tsup": "^8.2.3",
+    "typescript": "^5.5.4"
   }
 }
