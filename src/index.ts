@@ -1,15 +1,17 @@
 import { createWriteStream, rm } from 'fs';
+import { Storage as Gcs } from '@google-cloud/storage'
 import { Upload } from '@aws-sdk/lib-storage';
 import { DeleteObjectCommand, S3Client } from '@aws-sdk/client-s3';
 
 import { handleFileFn, removeFileFn, uploadFn } from '../types/multer.ts';
 
-import { uploadObject } from '../types/types.ts';
+import { UploadTarget } from '../types/types.ts';
 
 import {
     cloudinaryUploadOptionsFn,
     cloudinaryApiResponseFn,
-    v2
+    v2,
+    cloudinaryParams
 } from '../types/cloudinary.ts';
 
 import {
@@ -23,10 +25,11 @@ import {
     s3UploadOptionsFn,
     s3ResponseFn,
     Options,
-    contentTypeFn
+    contentTypeFn,
+    s3Params
 } from '../types/s3.ts';
 
-const CLOUDINARY = 'Cloudinary';
+const CLOUDINARY = 'CLOUDINARY';
 const GOOGLE_CLOUD_SERVICES = 'Storage';
 const AWS_S3 = 'S3Client';
 const MICROSOFT_AZURE_BLOBS = 'blobs';
@@ -91,13 +94,13 @@ const generateS3UploadOptions: s3UploadOptionsFn = ({ req, file, cb }, client, p
     let output: Options = {
         client,
         params: {
-            Bucket: params.bucket,
+            ...params,
             Body: file.stream,
-            ContentType: determineContentTypeForS3(file.originalname),
-            Key: params.key
+            ContentType: params.ContentType || determineContentTypeForS3(file.originalname),
+            Key: (params.Key) || file.originalname
         }
     }
-    if (params.metadata) output.params.Metadata = params.metadata;
+    if (params.Metadata) output.params.Metadata = params.Metadata;
     if (options) {
         if (options.tags) output.tags = options.tags;
         if (options.queueSize) output.queueSize = options.queueSize;
@@ -108,7 +111,6 @@ const generateS3UploadOptions: s3UploadOptionsFn = ({ req, file, cb }, client, p
             else if (typeof options.public_id === 'function') output.params.Key = options.public_id(req, file, cb)
         }
     }
-    if (!output.params.Key) output.params.Key = file.originalname;
     return output;
 }
 
@@ -156,30 +158,35 @@ const determineContentTypeForS3: contentTypeFn = (filename) => {
 }
 
 export class RemoteStorage {
-    #client;
+    #client: typeof v2 | Gcs | S3Client;
     #host;
     #params;
     #options;
     #validator;
     #trash;
 
-    constructor(opts: uploadObject) {
-        this.#client = opts.client;
-        this.#host = this.#client.constructor.name;
+    constructor(opts: UploadTarget) {
         this.#params = opts.params || {};
         this.#options = opts.options || {};
         this.#validator = (typeof this.#options.validator === 'function') ? this.#options.validator : null;
         this.#trash = this.#options.trash || 'trash.txt';
 
-        if (this.#host !== GOOGLE_CLOUD_SERVICES &&
-            this.#host !== AWS_S3 &&
-            this.#host !== MICROSOFT_AZURE_BLOBS) {
-            if (Object.keys(this.#client).includes('config') && Object.keys(this.#client).includes('uploader')) {
+        switch (opts.target) {
+            case CLOUDINARY:
+                v2.config(opts.config);
+                this.#client = v2;
                 this.#host = CLOUDINARY;
-            } else {
-                throw new Error(`Must define a client of class type ${GOOGLE_CLOUD_SERVICES}, ${AWS_S3}, ${MICROSOFT_AZURE_BLOBS} or of Cloudinary's v2 namespace`);
-            }
+                break;
+            case 'GCS':
+                this.#client = new Gcs(opts.config);
+                this.#host = this.#client.constructor.name;
+                break;
+            case 'AWS_S3':
+                this.#client = new S3Client(opts.config);
+                this.#host = this.#client.constructor.name;
+                break;
         }
+        if (!this.#client) throw new Error(`Must define a client of class type ${GOOGLE_CLOUD_SERVICES}, ${AWS_S3}, ${MICROSOFT_AZURE_BLOBS} or of Cloudinary's v2 namespace`);
     }
 
     _handleFile: handleFileFn = async (req, file, cb) => {
@@ -191,27 +198,11 @@ export class RemoteStorage {
 
             if (validateSuccess) {
                 let res = null;
-
-                switch (this.#host) {
-                    case CLOUDINARY:
-                        res = await this.#upload(req, file, cb);
-                        cb(null, res);
-                        break;
-                    case GOOGLE_CLOUD_SERVICES:
-                        res = await this.#upload(req, file, cb);
-                        cb(null, res);
-                        break;
-                    case AWS_S3:
-                        res = await this.#upload(req, file, cb);
-                        cb(null, res);
-                        break;
-                    case MICROSOFT_AZURE_BLOBS:
-                        break;
-                    default:
-                }
+                res = await this.#upload(req, file, cb);
+                cb(null, res);
             } else {
                 const writeStream = createWriteStream(this.#trash);
-                await file.stream.pipe(writeStream)
+                file.stream.pipe(writeStream)
                 rm(this.#trash, (err) => { });
                 cb(null, {
                     path: undefined,
@@ -234,11 +225,11 @@ export class RemoteStorage {
                 );
                 break;
             case GOOGLE_CLOUD_SERVICES:
-                (this.#client as Storage).bucket(this.#params.bucket).file(file.filename).delete({ ignoreNotFound: true }, cb);
+                (this.#client as Storage).bucket((this.#params as gcsParams).bucket).file(file.filename).delete({ ignoreNotFound: true }, cb);
                 break;
             case AWS_S3:
                 (this.#client as S3Client).send(new DeleteObjectCommand({
-                    Bucket: this.#params.bucket,
+                    Bucket: (this.#params as s3Params).Bucket,
                     Key: file.filename
                 }), cb);
                 break;
@@ -247,10 +238,12 @@ export class RemoteStorage {
     };
 
     #upload: uploadFn = (req, file, cb) => {
+        let params;
         switch (this.#host) {
             case CLOUDINARY:
                 return new Promise((resolve, reject) => {
                     let dataStream = null;
+                    params = this.#params as cloudinaryParams;
                     if (this.#options.chunk_size) {
                         dataStream = (this.#client as typeof v2).uploader.upload_chunked_stream(
                             generateCloudinaryUploadOptions({ req, file, cb }, this.#params, this.#options),
@@ -273,10 +266,12 @@ export class RemoteStorage {
                 });
             case GOOGLE_CLOUD_SERVICES:
                 return new Promise((resolve, reject) => {
-                    const output: [object, string] = generateGcsUploadOptions({ req, file, cb }, this.#params, this.#options)
+                    params = this.#params as gcsParams;
+
+                    const output: [object, string] = generateGcsUploadOptions({ req, file, cb }, params, this.#options)
                     const [gcsUploadOptions, destFileName] = output;
 
-                    const bucket = (this.#client as Storage).bucket(this.#params.bucket);
+                    const bucket = (this.#client as Storage).bucket(params.bucket);
                     const destFile = bucket.file(destFileName);
                     if (this.#options.chunk_size) {
                         file.stream.pipe(destFile.createWriteStream(gcsUploadOptions)
@@ -284,7 +279,8 @@ export class RemoteStorage {
                             destFile.delete({ ignoreNotFound: true });
                             reject(err.message);
                         }).on("finish", () => {
-                            resolve(generateGcsResponse(destFile, this.#params.bucket, destFileName))
+                            params = this.#params as gcsParams;
+                            resolve(generateGcsResponse(destFile, (params as gcsParams).bucket, destFileName))
                         });
                     }
                     else {
@@ -293,14 +289,15 @@ export class RemoteStorage {
                             destFile.delete({ ignoreNotFound: true });
                             reject(err.message);
                         }).on("finish", () => {
-                            resolve(generateGcsResponse(destFile, this.#params.bucket, destFileName))
+                            params = this.#params as gcsParams;
+                            resolve(generateGcsResponse(destFile, params.bucket, destFileName))
                         });
                     }
 
                 });
             case AWS_S3:
                 return new Promise((resolve, reject) => {
-                    const s3Options = generateS3UploadOptions({ req, file, cb }, (this.#client as S3Client), this.#params, this.#options);
+                    const s3Options = generateS3UploadOptions({ req, file, cb }, (this.#client as S3Client), this.#params as s3Params, this.#options);
                     const upload = new Upload(s3Options);
                     try {
                         upload.done()

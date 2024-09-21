@@ -1,19 +1,13 @@
 import { AbortController as IAbortController } from "@smithy/types";
 import { uploadOptions } from './types.ts'
-import { CompleteMultipartUploadCommandOutput, S3Client } from "@aws-sdk/client-s3";
+import { CompleteMultipartUploadCommandOutput, S3Client, PutObjectCommandInput } from "@aws-sdk/client-s3";
 import { multerFunctionParams } from "./multer.ts";
-import { Readable } from 'stream'
 import { Options } from "@aws-sdk/lib-storage";
 
 type s3UploadOptionsFn = (
     { req, file, cb }: multerFunctionParams,
     client: S3Client,
-    params: {
-        bucket: string,
-        key: string,
-        body: Readable,
-        metadata?: Record<string, string>
-    },
+    params: s3Params,
     options: uploadOptions
 ) => Options;
 
@@ -29,12 +23,8 @@ interface s3UploadOptions {
     abortController?: IAbortController;
 }
 
-interface s3Params {
-    Bucket: string,
-    Key?: string,
-    Body: Readable,
-    Metadata?: Record<string, string>,
-    ContentType?: string
+interface s3Params extends Omit<PutObjectCommandInput, 'Body' | 'Key'> {
+    Key?: string
 }
 
 type s3ResponseFn = (uploadResponse: CompleteMultipartUploadCommandOutput, options: Options) => {

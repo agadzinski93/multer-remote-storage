@@ -1,15 +1,35 @@
 import { Request } from "express"
 import { File, MulterCallback } from "./multer.ts"
-import { Tag } from "@aws-sdk/client-s3"
-import { S3Client } from './s3.ts'
-import type { Storage } from "@google-cloud/storage"
-import { v2 } from './cloudinary.ts'
+import { S3ClientConfig, Tag } from "@aws-sdk/client-s3"
+import type { StorageOptions } from "@google-cloud/storage"
+import type { s3Params } from "./s3.ts"
+import { cloudinaryParams } from "./cloudinary.ts"
+import { gcsParams } from "./gcs.ts"
+import { ConfigOptions } from "cloudinary"
 
-interface uploadObject {
-    client: S3Client | Storage | typeof v2,
-    params?: any,
+type options = {
     options?: uploadOptions
 }
+
+type CloudinaryTarget = options & {
+    target: 'CLOUDINARY'
+    config: boolean | ConfigOptions
+    params?: cloudinaryParams
+}
+
+type AwsS3Target = options & {
+    target: 'AWS_S3'
+    config: S3ClientConfig,
+    params: s3Params
+}
+
+type GcsTarget = options & {
+    target: 'GCS'
+    config: StorageOptions,
+    params: gcsParams
+}
+
+type UploadTarget = CloudinaryTarget | AwsS3Target | GcsTarget;
 
 interface uploadOptions {
     chunk_size?: number,
@@ -22,6 +42,6 @@ interface uploadOptions {
 }
 
 export type {
-    uploadObject,
+    UploadTarget,
     uploadOptions
 }

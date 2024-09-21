@@ -3,9 +3,11 @@ import { multerFunctionParams } from "./multer";
 import type { UploadApiOptions, UploadApiResponse, UploadApiErrorResponse } from "cloudinary";
 import { v2 } from "cloudinary";
 
+interface cloudinaryParams extends UploadApiOptions { }
+
 type cloudinaryUploadOptionsFn = (
     { req, file, cb }: multerFunctionParams,
-    params: UploadApiOptions,
+    params: cloudinaryParams,
     options: uploadOptions | null
 ) => UploadApiOptions;
 
@@ -25,6 +27,7 @@ interface cloudinaryApiResponse {
 type cloudinaryApiResponseFn = (uploadResponse: UploadApiResponse) => cloudinaryApiResponse
 
 export type {
+    cloudinaryParams,
     cloudinaryUploadOptionsFn,
     cloudinaryApiResponse,
     cloudinaryApiResponseFn,

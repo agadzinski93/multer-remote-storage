@@ -1,4 +1,4 @@
-import { StorageOptions, Bucket, Storage, File } from "@google-cloud/storage";
+import { StorageOptions, Storage, File } from "@google-cloud/storage";
 import { multerFunctionParams } from "./multer";
 import { uploadOptions } from './types'
 
@@ -15,7 +15,7 @@ type gcsUploadOptionsFn = (
 
 type gcsResponseFn = (
     uploadResponse: File,
-    bucket: Bucket,
+    bucket: string,
     destFileName: string
 ) => object;
 
