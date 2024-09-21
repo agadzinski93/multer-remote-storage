@@ -1,17 +1,18 @@
 import { createWriteStream, rm } from 'fs';
 import { Storage as Gcs } from '@google-cloud/storage'
 import { Upload } from '@aws-sdk/lib-storage';
-import { DeleteObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import { DeleteObjectCommand, DeleteObjectCommandInput, S3Client } from '@aws-sdk/client-s3';
 
 import { handleFileFn, removeFileFn, uploadFn } from '../types/multer.ts';
 
-import { UploadTarget } from '../types/types.ts';
+import { deleteFileFn, UploadTarget } from '../types/types.ts';
 
 import {
     cloudinaryUploadOptionsFn,
     cloudinaryApiResponseFn,
     v2,
-    cloudinaryParams
+    cloudinaryParams,
+    cloudinaryDeleteOptions
 } from '../types/cloudinary.ts';
 
 import {
@@ -28,6 +29,7 @@ import {
     contentTypeFn,
     s3Params
 } from '../types/s3.ts';
+import { DeleteOptions } from '@google-cloud/storage/build/cjs/src/nodejs-common/service-object';
 
 const CLOUDINARY = 'CLOUDINARY';
 const GOOGLE_CLOUD_SERVICES = 'Storage';
@@ -310,9 +312,51 @@ export class RemoteStorage {
                         reject(err);
                     }
                 });
-            case MICROSOFT_AZURE_BLOBS:
-                break;
             default:
+        }
+    }
+    delete: deleteFileFn = async (file, options?) => {
+        try {
+            switch (this.#host) {
+                case CLOUDINARY:
+                    if (options) {
+                        await (this.#client as typeof v2).uploader.destroy(file, options as cloudinaryDeleteOptions);
+                    } else {
+                        await (this.#client as typeof v2).uploader.destroy(file);
+                    }
+                    break;
+                case GOOGLE_CLOUD_SERVICES:
+                    if (options) {
+                        await (this.#client as Storage).bucket((this.#params as gcsParams).bucket).file(file).delete(options as DeleteOptions);
+                    } else {
+                        await (this.#client as Storage).bucket((this.#params as gcsParams).bucket).file(file).delete();
+                    }
+                    break;
+                case AWS_S3:
+                    if (options) {
+                        await (this.#client as S3Client).send(new DeleteObjectCommand({
+                            Bucket: (this.#params as s3Params).Bucket,
+                            Key: file
+                        }));
+                    } else {
+                        if (options) {
+                            await (this.#client as S3Client).send(new DeleteObjectCommand({
+                                ...options as Omit<DeleteObjectCommandInput, 'Bucket' | 'Key'>,
+                                Bucket: (this.#params as s3Params).Bucket,
+                                Key: file
+                            }));
+                        } else {
+                            await (this.#client as S3Client).send(new DeleteObjectCommand({
+                                Bucket: (this.#params as s3Params).Bucket,
+                                Key: file
+                            }));
+                        }
+                    }
+                    break;
+                default:
+            }
+        } catch (err) {
+            if (err instanceof Error) console.error(err.message);
         }
     }
 }

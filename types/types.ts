@@ -1,12 +1,13 @@
 import { Request } from "express"
 import { File, MulterCallback } from "./multer.ts"
-import { S3ClientConfig } from "@aws-sdk/client-s3"
+import { DeleteObjectCommandInput, S3ClientConfig } from "@aws-sdk/client-s3"
 import { Options } from "@aws-sdk/lib-storage";
 import type { StorageOptions } from "@google-cloud/storage"
 import type { s3Params } from "./s3.ts"
-import { cloudinaryParams } from "./cloudinary.ts"
+import { cloudinaryDeleteOptions, cloudinaryParams } from "./cloudinary.ts"
 import { gcsParams } from "./gcs.ts"
 import { ConfigOptions } from "cloudinary"
+import { DeleteOptions } from "@google-cloud/storage/build/cjs/src/nodejs-common/service-object";
 
 type options = {
     options?: uploadOptions
@@ -45,8 +46,15 @@ interface uploadOptions {
 
 type s3UploadOptions = uploadOptions & Omit<Options, 'client' | 'params'>
 
+interface deleteFileFn {
+    (file: string, options?: cloudinaryDeleteOptions): Promise<void>;
+    (file: string, options?: DeleteOptions): Promise<void>;
+    (file: string, options?: Omit<DeleteObjectCommandInput, 'Bucket' | 'Key'>): Promise<void>;
+}
+
 export type {
     UploadTarget,
     uploadOptions,
-    s3UploadOptions
+    s3UploadOptions,
+    deleteFileFn
 }

@@ -1,6 +1,6 @@
 import { uploadOptions } from "./types";
 import { multerFunctionParams } from "./multer";
-import type { UploadApiOptions, UploadApiResponse, UploadApiErrorResponse } from "cloudinary";
+import type { UploadApiOptions, UploadApiResponse, UploadApiErrorResponse, ResourceType, DeliveryType } from "cloudinary";
 import { v2 } from "cloudinary";
 
 interface cloudinaryParams extends UploadApiOptions { }
@@ -26,13 +26,20 @@ interface cloudinaryApiResponse {
 
 type cloudinaryApiResponseFn = (uploadResponse: UploadApiResponse) => cloudinaryApiResponse
 
+interface cloudinaryDeleteOptions {
+    resource_type: ResourceType,
+    type: DeliveryType,
+    invalidate: boolean
+}
+
 export type {
     cloudinaryParams,
     cloudinaryUploadOptionsFn,
     cloudinaryApiResponse,
     cloudinaryApiResponseFn,
     UploadApiResponse,
-    UploadApiErrorResponse
+    UploadApiErrorResponse,
+    cloudinaryDeleteOptions
 }
 
 export { v2 }
