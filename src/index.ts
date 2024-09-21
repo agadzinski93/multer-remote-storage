@@ -102,13 +102,12 @@ const generateS3UploadOptions: s3UploadOptionsFn = ({ req, file, cb }, client, p
     }
     if (params.Metadata) output.params.Metadata = params.Metadata;
     if (options) {
-        if (options.tags) output.tags = options.tags;
-        if (options.queueSize) output.queueSize = options.queueSize;
+        output = { ...output, ...options };
         if (options.chunk_size) output.partSize = options.chunk_size;
-        if (options.leavePartsOnError) output.leavePartsOnError = options.leavePartsOnError;
         if (options.public_id) {
             if (typeof options.public_id === 'string') output.params.Key = options.public_id
             else if (typeof options.public_id === 'function') output.params.Key = options.public_id(req, file, cb)
+
         }
     }
     return output;
