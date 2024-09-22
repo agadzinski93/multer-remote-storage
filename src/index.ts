@@ -1,5 +1,5 @@
 import { createWriteStream, rm } from 'fs';
-import { Storage as Gcs } from '@google-cloud/storage'
+import { CreateWriteStreamOptions, Storage as Gcs } from '@google-cloud/storage'
 import { Upload } from '@aws-sdk/lib-storage';
 import { DeleteObjectCommand, DeleteObjectCommandInput, S3Client } from '@aws-sdk/client-s3';
 
@@ -66,7 +66,7 @@ const generateCloudinaryResponse: cloudinaryApiResponseFn = (uploadResponse) => 
 }
 
 const generateGcsUploadOptions: gcsUploadOptionsFn = ({ req, file, cb }, params, options) => {
-    let output: [gcsParams, string] = [{
+    let output: [CreateWriteStreamOptions, string] = [{
         ...params
     }, ''];
     if (options) {
@@ -269,7 +269,7 @@ export class RemoteStorage {
                 return new Promise((resolve, reject) => {
                     params = this.#params as gcsParams;
 
-                    const output: [object, string] = generateGcsUploadOptions({ req, file, cb }, params, this.#options)
+                    const output: [CreateWriteStreamOptions, string] = generateGcsUploadOptions({ req, file, cb }, params, this.#options)
                     const [gcsUploadOptions, destFileName] = output;
 
                     const bucket = (this.#client as Storage).bucket(params.bucket);

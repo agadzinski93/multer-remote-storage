@@ -1,17 +1,16 @@
-import { StorageOptions, Storage, File } from "@google-cloud/storage";
+import { Storage, File, CreateWriteStreamOptions } from "@google-cloud/storage";
 import { multerFunctionParams } from "./multer";
 import { uploadOptions } from './types'
 
-interface gcsParams extends StorageOptions {
-    bucket: string,
-    chunkSize?: number
+interface gcsParams extends CreateWriteStreamOptions {
+    bucket: string
 }
 
 type gcsUploadOptionsFn = (
     { req, file, cb }: multerFunctionParams,
     params: gcsParams,
     options: uploadOptions
-) => [object, string];
+) => [CreateWriteStreamOptions, string];
 
 type gcsResponseFn = (
     uploadResponse: File,
