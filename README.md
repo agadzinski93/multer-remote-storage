@@ -27,6 +27,7 @@ Use Multer to easily upload files to Cloudinary, AWS S3, or Google Cloud Storage
 7. [Public Id](#Public-Id)
 8. [TypeScript Example](#TypeScript-Example)
 9. [Release Notes](#Release-Notes)
+    * [Additions](#Additions)
     * [Changes](#Changes)
     * [Errors](#Errors)
         * [Object literal may only specify known properties but bucket does not exist in type s3Params](#Object-literal-may-only-specify-known-properties-but-bucket-does-not-exist-in-type-s3Params)
@@ -413,9 +414,13 @@ export { storage };
 
 ## Release Notes
 
-For those who used versions < 1.0.0, please continue below to see how to update your code. 
+### Additions
+
+1. Added a `getTarget` function to the `RemoteStorage` class that will return whether your instance is using `CLOUDINARY`, `GCS`, or `AWS_S3`.
 
 ### Changes
+
+For those who used versions < 1.0.0, please continue below to see how to update your code. 
 
 Due to frequent typing conflicts, all storage clients are now dependencies of this package and are completely self-contained. You will no longer need to install Cloudinary, Amazon, or Google's storage clients to use this package. As such, configuring RemoteStorage class is now different.
 
