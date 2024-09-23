@@ -289,13 +289,13 @@ Here is an example:
  */
 const handleTopicValidation = (req, file, cb) => {
     let output = true;
-        try {
-            const {error, value} = topicValidator.validate(req.body);
-            if (error) output = false;
-        } catch(err) {
-            cb(err); //Will result in Multer calling next(err)
-        }
-        return output;
+    try {
+        const {error, value} = topicValidator.validate(req.body);
+        if (error) output = false;
+    } catch(err) {
+        cb(err); //Will result in Multer calling next(err)
+    }
+    return output;
 }
 
 const storage = new RemoteStorage({

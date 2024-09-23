@@ -9,6 +9,8 @@ import { gcsParams } from "./gcs.ts"
 import { ConfigOptions } from "cloudinary"
 import { DeleteOptions } from "@google-cloud/storage/build/cjs/src/nodejs-common/service-object";
 
+type HostOptions = 'CLOUDINARY' | 'GCS' | 'AWS_S3';
+
 type options = {
     options?: uploadOptions
 }
@@ -53,6 +55,7 @@ interface deleteFileFn {
 }
 
 export type {
+    HostOptions,
     UploadTarget,
     uploadOptions,
     s3UploadOptions,

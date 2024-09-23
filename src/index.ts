@@ -5,7 +5,7 @@ import { DeleteObjectCommand, DeleteObjectCommandInput, S3Client } from '@aws-sd
 
 import { handleFileFn, removeFileFn, uploadFn } from '../types/multer.ts';
 
-import { deleteFileFn, UploadTarget } from '../types/types.ts';
+import { HostOptions, deleteFileFn, UploadTarget } from '../types/types.ts';
 
 import {
     cloudinaryUploadOptionsFn,
@@ -34,7 +34,6 @@ import { DeleteOptions } from '@google-cloud/storage/build/cjs/src/nodejs-common
 const CLOUDINARY = 'CLOUDINARY';
 const GOOGLE_CLOUD_SERVICES = 'Storage';
 const AWS_S3 = 'S3Client';
-const MICROSOFT_AZURE_BLOBS = 'blobs';
 
 const generateCloudinaryUploadOptions: cloudinaryUploadOptionsFn = ({ req, file, cb }, params, options) => {
     let output = {
@@ -187,7 +186,24 @@ export class RemoteStorage {
                 this.#host = this.#client.constructor.name;
                 break;
         }
-        if (!this.#client) throw new Error(`Must define a client of class type ${GOOGLE_CLOUD_SERVICES}, ${AWS_S3}, ${MICROSOFT_AZURE_BLOBS} or of Cloudinary's v2 namespace`);
+        if (!this.#client) throw new Error('Must define a client for Cloudinary, Google Cloud Storage, or AWS S3');
+    }
+
+    getTarget(): HostOptions | undefined {
+        let output: HostOptions | undefined;
+        switch (this.#host) {
+            case CLOUDINARY:
+                output = 'CLOUDINARY';
+                break;
+            case GOOGLE_CLOUD_SERVICES:
+                output = 'GCS';
+                break;
+            case AWS_S3:
+                output = 'AWS_S3';
+                break;
+            default:
+        }
+        return output;
     }
 
     _handleFile: handleFileFn = async (req, file, cb) => {
