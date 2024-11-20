@@ -219,7 +219,7 @@ export class RemoteStorage {
                 cb(null, res);
             } else {
                 const writeStream = createWriteStream(this.#trash);
-                file.stream.pipe(writeStream)
+                file.stream.pipe(writeStream);
                 rm(this.#trash, (err) => { });
                 cb(null, {
                     path: undefined,
@@ -259,27 +259,30 @@ export class RemoteStorage {
         switch (this.#host) {
             case CLOUDINARY:
                 return new Promise((resolve, reject) => {
-                    let dataStream = null;
                     params = this.#params as cloudinaryParams;
+
                     if (this.#options.chunk_size) {
-                        dataStream = (this.#client as typeof v2).uploader.upload_chunked_stream(
+                        file.stream.pipe((this.#client as typeof v2).uploader.upload_chunked_stream(
                             generateCloudinaryUploadOptions({ req, file, cb }, this.#params, this.#options),
                             (err, uploadResponse) => {
                                 if (err) reject(err);
                                 if (uploadResponse) resolve(generateCloudinaryResponse(uploadResponse));
                             }
-                        );
+                        )).on('error', err => {
+                            console.log(err);
+                        });
                     }
                     else {
-                        dataStream = (this.#client as typeof v2).uploader.upload_stream(
+                        file.stream.pipe((this.#client as typeof v2).uploader.upload_stream(
                             generateCloudinaryUploadOptions({ req, file, cb }, this.#params, this.#options),
                             (err, uploadResponse) => {
                                 if (err) reject(err);
                                 if (uploadResponse) resolve(generateCloudinaryResponse(uploadResponse));
                             }
-                        );
+                        )).on('error', err => {
+                            console.log(err);
+                        });
                     }
-                    file.stream.pipe(dataStream);
                 });
             case GOOGLE_CLOUD_SERVICES:
                 return new Promise((resolve, reject) => {
